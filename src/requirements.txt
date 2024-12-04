@@ -1,8 +1,6 @@
 streamlit
 langchain
-langchain-core
-langchain-openai
-langchain-text-splitters
+openai
+python-dotenv
 PyPDF2
 python-docx
-python-dotenv
