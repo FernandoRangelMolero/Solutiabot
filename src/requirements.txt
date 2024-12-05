@@ -1,6 +1,0 @@
-streamlit
-langchain
-openai
-python-dotenv
-PyPDF2
-python-docx
