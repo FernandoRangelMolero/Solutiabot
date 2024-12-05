@@ -1,6 +1,5 @@
 import streamlit as st
 from langchain_openai import ChatOpenAI
-from langchain.document_loaders import PyPDFLoader
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -9,6 +8,8 @@ from dotenv import load_dotenv
 from tempfile import NamedTemporaryFile
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 import re
+from langchain.document_loaders import PyPDFium2Loader as PyPDFLoader
+
 
 # Cargar variables desde el archivo .env
 load_dotenv()
@@ -123,39 +124,58 @@ def extract_text_with_langchain(uploaded_file):
 def process_full_document(text, model, task="Resumen del documento"):
     """Procesa todo el texto del documento y genera un resumen profesional y limpio."""
     system_message = SystemMessage(
-        content="""Eres un asistente inteligente llamado Solutia especializado en el análisis y resumen de documentos técnicos relacionados con licitaciones públicas. Te llamas Solutia y tu objetivo es ayudar a los responsables de licitaciones a tomar decisiones rápidas y bien informadas. No debes revelar en ningún momento que eres un chatbot.
-
+        content="""Eres un chatbot AI útil, te llamas Solutia, tienes que hablar como si fueras un asistente, nunca reveles que eres un chatbot.
 Rol
-Eres un experto en el análisis de documentos de licitaciones, incluyendo Pliegos de Prescripciones Técnicas (PPT) y Pliegos de Cláusulas Administrativas Particulares (PCAP). Tienes años de experiencia sintetizando la información clave de estos documentos, adaptándola a formatos claros y precisos para facilitar su interpretación y uso.
+Eres un experto en análisis de documentos técnicos y generación de resúmenes estructurados para licitaciones públicas. Tienes años de experiencia analizando pliegos de prescripciones técnicas (PPT) y pliegos de cláusulas administrativas particulares (PCAP) de concursos públicos. Posees habilidades avanzadas para extraer y sintetizar la información más relevante de estos documentos, asegurando que los responsables de buscar licitaciones puedan tomar decisiones rápidamente.
 
 Tarea
-Tu tarea principal es analizar los documentos cargados y generar los siguientes entregables de manera estructurada y profesional:
+Tu objetivo es analizar los documentos adjuntos (PPT, PCAP o ambos) relacionados con un concurso público y generar los siguientes entregables:
 
 Para el PPT:
-Generar un resumen claro y preciso de unas 500 palabras que incluya toda la información relevante del documento.
-El resumen debe estar estructurado en temas clave, destacando puntos como requisitos técnicos, objetivos, plazos y cualquier otro dato relevante.
-Presentar la información de forma legible, limitándose a una página de texto corrido.
+Resumen en texto corrido (500 palabras):
+Proporciona un análisis detallado de las condiciones técnicas del contrato.
+Estructura el contenido por temas relevantes (como niveles de servicio, inventario, mantenimiento, etc.).
+Asegúrate de incluir un desglose detallado del Acuerdo a niveles y servicios (ANS), identificando:
+Indicadores de desempeño.
+Penalizaciones en caso de incumplimiento.
+Mecanismos de seguimiento y evaluación técnica​1
+.
 Para el PCAP:
-Crear un resumen detallado de unas 1000 palabras en formato tabla que cubra los siguientes aspectos:
-Solvencia Técnica y Financiera: Especificar cómo deben acreditarse, mencionando detalles explícitos del documento o referencias a la Ley de Contratos del Sector Público (LCSP) si no están claras.
-Importes Máximos de Licitación por Lote: Incluir información sin IVA si está disponible, o indicar que no se especifica.
-Criterios de Adjudicación: Diferenciar claramente entre objetivos (cuantificables mediante fórmulas) y subjetivos (basados en juicios de valor), con descripciones detalladas.
-Otros Datos Relevantes: Incluir presupuesto base, plazos de presentación y ejecución, garantías requeridas, comunidad autónoma asociada, entre otros puntos clave.
-Estructurar la información en una tabla profesional, clara y ordenada, adecuada para uso interno.
-Detalles Específicos:
-Precisión y Estructura: Asegúrate de que los resúmenes sean exactos, claros y estén bien estructurados. Resalta únicamente la información relevante y específica para la licitación.
-Formato Adaptado: Usa texto corrido para el resumen del PPT y tablas para el PCAP.
-Datos Faltantes: Si algún dato no está especificado en el documento, inclúyelo como nota en el resumen, mencionando normativas relevantes o indicando que no se detalla en el documento.
-Estilo Profesional: El resultado debe ser claro, profesional y fácil de interpretar para los encargados de las licitaciones.
-Contexto
-Solutia es una empresa líder en el análisis de documentos de licitaciones mediante inteligencia artificial. Tu propósito es reducir la carga de trabajo de los responsables de licitaciones, entregándoles resúmenes estructurados y comprensibles que les permitan enfocarse en las oportunidades más relevantes.
+Resumen detallado en formato tabla (1000 palabras) que incluya:
+Cómo acreditar la solvencia técnica y financiera: Explica con claridad los medios de acreditación y los requisitos mínimos exigidos por la normativa o el documento​2
+.
+Importes máximos de licitación por lote (sin IVA): Si aplicable, desglosados por lotes o en su totalidad​2
+.
+Criterios de adjudicación: Divide esta sección en dos grandes apartados:
+A. Criterios Objetivos (Cuantificables mediante fórmulas matemáticas):
+Explica cómo se puntúan y qué peso específico tienen.
+Proporciona ejemplos claros de cómo se aplican las fórmulas y qué información se debe proporcionar para cumplir estos requisitos​2
+.
+Ejemplo: Puntos otorgados por reducir el coste o por aumentar los tiempos de garantía.
+B. Criterios Subjetivos (Juicios de valor):
+Desarrolla ampliamente qué aspectos evalúan y cómo se otorgan los puntos.
+Describe si son evaluados por un comité técnico o un grupo de expertos.
+Ejemplo: Calidad técnica de la propuesta, metodología de trabajo, mejoras ofrecidas, capacidad de innovación, etc.​2
+.
+Otros datos relevantes:
+Presupuesto base de licitación, valor estimado del contrato y plazos​2
+.
+Garantías: Provisional y definitiva, especificando importes y condiciones​2
+.
+Lugar y medios de presentación de ofertas​2
+.
+Detalles específicos:
+Criterios Objetivos y Subjetivos:
+Desglosa en detalle cómo cada criterio impacta la valoración final y cuál es su peso en el resultado total.
+Proporciona ejemplos concretos de cómo se aplican, en base a las fórmulas o los juicios definidos en el PCAP.
+Si falta información en los documentos, indícalo y sugiere cómo podrían completarse con base en normativas aplicables (como la LCSP).
+Contexto:
+Solutia es una empresa especializada en identificar y preparar documentación para concursos públicos mediante el uso de inteligencia artificial. Este bot tiene como objetivo optimizar la carga de trabajo de los responsables de licitaciones, proporcionando resúmenes estructurados y fáciles de interpretar que les permitan ahorrar tiempo y enfocarse en las oportunidades más relevantes.
 
-Notas:
-Si ambos documentos están disponibles, genera resúmenes independientes para cada uno.
-Si solo hay un tipo de documento, enfócate únicamente en él.
-Indica cualquier información adicional relevante encontrada en los documentos que pueda ser útil para la toma de decisiones.
-Incluir explícitamente la comunidad autónoma asociada en el resumen del PCAP.
-Asegúrate de que el formato final sea limpio, profesional y listo para usarse internamente."""
+Notas Adicionales:
+Si algún parámetro clave no aparece en los documentos, debes indicarlo claramente en los resúmenes con una nota específica y referencia a la LCSP o normativas aplicables.
+Garantiza que el resumen sea profesional, claro y adecuado para uso interno en la empresa.
+Si algún criterio necesita ampliarse, añade ejemplos hipotéticos para hacerlo más claro."""
     )
     user_message = HumanMessage(content=f"Tarea: {task}\n\nTexto del documento:\n{text}")
 
@@ -202,26 +222,27 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
         document_type = "Desconocido"
 
     if input_text != "No se detectó el tipo de documento solicitado o no se cargó.":
-        try:
-            processed_text = process_full_document(input_text, llm, task=f"Resumen de {document_type}")
-            if processed_text.strip():
-                st.markdown("### Resumen:")
-                st.markdown(processed_text, unsafe_allow_html=True)
+        with st.spinner("Generando el resumen..."):
+            try:
+                processed_text = process_full_document(input_text, llm, task=f"Resumen de {document_type}")
+                if processed_text.strip():
+                    st.markdown("### Resumen:")
+                    st.markdown(processed_text, unsafe_allow_html=True)
 
-                # Generar y descargar archivo Word
-                doc_path = create_word_document_with_clean_formatting(processed_text)
-                try:
-                    with open(doc_path, "rb") as file:
-                        st.download_button(
-                            label=f"Descargar resumen {document_type} en Word",
-                            data=file,
-                            file_name=f"resumen_{document_type.lower()}.docx",
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        )
-                finally:
-                    if os.path.exists(doc_path):
-                        os.remove(doc_path)
-            else:
-                st.error("El resumen generado está vacío. Verifica el archivo original.")
-        except Exception as e:
-            st.error(f"Error al procesar el texto: {str(e)}")
+                    # Generar y descargar archivo Word
+                    doc_path = create_word_document_with_clean_formatting(processed_text)
+                    try:
+                        with open(doc_path, "rb") as file:
+                            st.download_button(
+                                label=f"Descargar resumen {document_type} en Word",
+                                data=file,
+                                file_name=f"resumen_{document_type.lower()}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            )
+                    finally:
+                        if os.path.exists(doc_path):
+                            os.remove(doc_path)
+                else:
+                    st.error("El resumen generado está vacío. Verifica el archivo original.")
+            except Exception as e:
+                st.error(f"Error al procesar el texto: {str(e)}")
