@@ -10,7 +10,6 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 import re
 from langchain.document_loaders import PyPDFium2Loader as PyPDFLoader
 
-
 # Cargar variables desde el archivo .env
 load_dotenv()
 
@@ -93,6 +92,7 @@ def add_table_to_document(doc, table_lines):
         for i, cell in enumerate(row):
             cells[i].text = clean_text(cell.strip())
 
+
 # Configuración del modelo
 llm = ChatOpenAI(
     model="gpt-4o-mini",
@@ -100,8 +100,19 @@ llm = ChatOpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "processed_files" not in st.session_state:
+    st.session_state.processed_files = {"ppt": None, "pcap": None}
+
+if "processed_summaries" not in st.session_state:
+    st.session_state.processed_summaries = {"ppt": None, "pcap": None}
+
+# Agregar nuevo estado para el último tipo de documento procesado
+if "last_processed" not in st.session_state:
+    st.session_state.last_processed = None
+
+# Agregar nuevo estado para controlar el orden de visualización
+if "display_order" not in st.session_state:
+    st.session_state.display_order = []
 
 # Función para extraer texto del PDF
 def extract_text_with_langchain(uploaded_file):
@@ -121,8 +132,35 @@ def extract_text_with_langchain(uploaded_file):
         os.remove(temp_file_path)
 
 # Procesar texto del documento completo
+def split_text(text, max_chunk_size=50000):
+    """Divide el texto en chunks más pequeños."""
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_size = 0
+    
+    for word in words:
+        # Estimación aproximada: 4 caracteres = 1 token
+        word_size = len(word) // 4
+        if current_size + word_size > max_chunk_size:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = [word]
+            current_size = word_size
+        else:
+            current_chunk.append(word)
+            current_size += word_size
+    
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+    
+    return chunks
+
 def process_full_document(text, model, task="Resumen del documento"):
     """Procesa todo el texto del documento y genera un resumen profesional y limpio."""
+    # Dividir el texto en chunks más pequeños
+    chunks = split_text(text)
+    summaries = []
+    
     system_message = SystemMessage(
         content="""Eres un chatbot AI útil, te llamas Solutia, tienes que hablar como si fueras un asistente, nunca reveles que eres un chatbot.
 Rol
@@ -177,72 +215,141 @@ Si algún parámetro clave no aparece en los documentos, debes indicarlo clarame
 Garantiza que el resumen sea profesional, claro y adecuado para uso interno en la empresa.
 Si algún criterio necesita ampliarse, añade ejemplos hipotéticos para hacerlo más claro."""
     )
-    user_message = HumanMessage(content=f"Tarea: {task}\n\nTexto del documento:\n{text}")
-
     try:
-        response = model([system_message, user_message])
-        return response.content.strip()
+        # Procesar cada chunk por separado
+        for i, chunk in enumerate(chunks):
+            chunk_task = f"{task} (Parte {i+1}/{len(chunks)})"
+            user_message = HumanMessage(content=f"Tarea: {chunk_task}\n\nTexto del documento:\n{chunk}")
+            
+            response = model([system_message, user_message])
+            summaries.append(response.content.strip())
+        
+        # Si hay múltiples chunks, hacer un resumen final
+        if len(summaries) > 1:
+            final_summary_text = "\n\n".join(summaries)
+            user_message = HumanMessage(
+                content=f"Tarea: Generar resumen final combinando los siguientes resúmenes parciales:\n\n{final_summary_text}"
+            )
+            final_response = model([system_message, user_message])
+            return final_response.content.strip()
+        
+        return summaries[0]
+    
     except Exception as e:
         st.error(f"Error al generar el resumen: {str(e)}")
         return "Error al generar el resumen."
 
-# Subir múltiples archivos
-uploaded_files = st.file_uploader("Carga uno o más archivos PDF", type=["pdf"], accept_multiple_files=True)
+# Función para validar el nombre del archivo
+def validate_file_type(filename, expected_type):
+    return expected_type.lower() in filename.lower()
 
-# Inicializar las variables de texto
-pcap_text, ppt_text = "", ""
 
-if uploaded_files:
-    with st.spinner("Procesando archivos..."):
-        for uploaded_file in uploaded_files:
-            try:
-                file_text = extract_text_with_langchain(uploaded_file)
-                if file_text:
-                    st.text_area(f"Texto extraído de {uploaded_file.name}", value=file_text, height=200)
-                if "PCAP" in uploaded_file.name.upper():
-                    pcap_text += file_text
-                elif "PPT" in uploaded_file.name.upper():
-                    ppt_text += file_text
-            except Exception as e:
-                st.error(f"Error al procesar el archivo {uploaded_file.name}: {str(e)}")
-        st.success("Archivos procesados exitosamente.")
+# Título principal - agregar antes de los file uploaders
+st.markdown("<h1 style='text-align: center; color: #FFFF;'>Resúmenes pliegos Solutia</h1>", unsafe_allow_html=True)
 
-# Chatbot funcionalidad
-if prompt := st.chat_input("Escribe tu mensaje..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# Subir PPT
+st.markdown("### **Sube tu PPT**")
+ppt_file = st.file_uploader(
+    "",  # Label vacío porque usamos markdown arriba
+    type=["pdf"],
+    key="ppt_uploader",
+    help="Arrastra o selecciona tu archivo PPT aquí - Límite 200MB por archivo • PDF"
+)
+
+# Verificar si el archivo fue removido
+if not ppt_file:
+    if st.session_state.processed_files["ppt"] is not None:
+        st.session_state.processed_files["ppt"] = None
+        st.session_state.processed_summaries["ppt"] = None
+elif ppt_file and validate_file_type(ppt_file.name, "ppt"):
+    with st.spinner("Procesando PPT..."):
+        ppt_text = extract_text_with_langchain(ppt_file)
+        if ppt_text:
+            st.session_state.processed_files["ppt"] = ppt_text
+            if "ppt" not in st.session_state.display_order:
+                ppt_summary = process_full_document(ppt_text, llm, task="Resumen de PPT")
+                st.session_state.processed_summaries["ppt"] = ppt_summary
+                st.session_state.display_order.insert(0, "ppt")
+            st.success(f"PPT procesado correctamente: {ppt_file.name}")
+else:
+    st.error("El archivo subido no parece ser un PPT. Por favor, verifica el nombre del archivo.")
+    st.session_state.processed_files["ppt"] = None
+
+# Subir PCAP
+st.markdown("### **Sube tu PCAP**")
+pcap_file = st.file_uploader(
+    "",  # Label vacío porque usamos markdown arriba
+    type=["pdf"],
+    key="pcap_uploader",
+    help="Arrastra o selecciona tu archivo PCAP aquí - Límite 200MB por archivo • PDF"
+)
+
+# Verificar si el archivo fue removido
+if not pcap_file:
+    if st.session_state.processed_files["pcap"] is not None:
+        st.session_state.processed_files["pcap"] = None
+        st.session_state.processed_summaries["pcap"] = None
+elif pcap_file and validate_file_type(pcap_file.name, "pcap"):
+    with st.spinner("Procesando PCAP..."):
+        pcap_text = extract_text_with_langchain(pcap_file)
+        if pcap_text:
+            st.session_state.processed_files["pcap"] = pcap_text
+            if "pcap" not in st.session_state.display_order:
+                pcap_summary = process_full_document(pcap_text, llm, task="Resumen de PCAP")
+                st.session_state.processed_summaries["pcap"] = pcap_summary
+                st.session_state.display_order.insert(0, "pcap")
+            st.success(f"PCAP procesado correctamente: {pcap_file.name}")
+else:
+    st.error("El archivo subido no parece ser un PCAP. Por favor, verifica el nombre del archivo.")
+    st.session_state.processed_files["pcap"] = None
+
+def show_summary(doc_type):
+    if st.session_state.processed_summaries[doc_type]:
+        st.markdown(f"### Resumen {doc_type.upper()}")
+        st.markdown(st.session_state.processed_summaries[doc_type], unsafe_allow_html=True)
+        doc_path = create_word_document_with_clean_formatting(st.session_state.processed_summaries[doc_type])
+        with open(doc_path, "rb") as file:
+            st.download_button(
+                label=f"Descargar resumen {doc_type.upper()} en Word",
+                data=file,
+                file_name=f"resumen_{doc_type}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                key=f"download_{doc_type}_1"
+            )
+        os.remove(doc_path)
+
+# Mostrar resúmenes en el orden actual
+summary_container = st.container()
+with summary_container:
+    for doc_type in st.session_state.display_order:
+        show_summary(doc_type)
+
+# Modificar el botón de generar nuevo resumen
+if st.button("Generar nuevo resumen"):
+    current_type = st.session_state.display_order[0] if st.session_state.display_order else None
     
-    if "PPT" in prompt.upper() and ppt_text:
-        input_text = ppt_text
-        document_type = "PPT"
-    elif "PCAP" in prompt.upper() and pcap_text:
-        input_text = pcap_text
-        document_type = "PCAP"
-    else:
-        input_text = "No se detectó el tipo de documento solicitado o no se cargó."
-        document_type = "Desconocido"
+    if current_type:
+        with st.spinner(f"Regenerando resumen {current_type.upper()}..."):
+            # Limpiar el archivo Word anterior si existe
+            if os.path.exists("resumen_generado.docx"):
+                try:
+                    os.remove("resumen_generado.docx")
+                except:
+                    pass
+            
+            # Generar nuevo resumen
+            new_summary = process_full_document(
+                st.session_state.processed_files[current_type],
+                llm,
+                task=f"Resumen de {current_type.upper()}"
+            )
+            
+            # Actualizar el estado
+            st.session_state.processed_summaries[current_type] = new_summary
+            
+            # Limpiar y actualizar el orden de visualización
+            st.session_state.display_order = [current_type]
+            
+            st.success(f"Resumen {current_type.upper()} regenerado")
+            st.rerun()
 
-    if input_text != "No se detectó el tipo de documento solicitado o no se cargó.":
-        with st.spinner("Generando el resumen..."):
-            try:
-                processed_text = process_full_document(input_text, llm, task=f"Resumen de {document_type}")
-                if processed_text.strip():
-                    st.markdown("### Resumen:")
-                    st.markdown(processed_text, unsafe_allow_html=True)
-
-                    # Generar y descargar archivo Word
-                    doc_path = create_word_document_with_clean_formatting(processed_text)
-                    try:
-                        with open(doc_path, "rb") as file:
-                            st.download_button(
-                                label=f"Descargar resumen {document_type} en Word",
-                                data=file,
-                                file_name=f"resumen_{document_type.lower()}.docx",
-                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            )
-                    finally:
-                        if os.path.exists(doc_path):
-                            os.remove(doc_path)
-                else:
-                    st.error("El resumen generado está vacío. Verifica el archivo original.")
-            except Exception as e:
-                st.error(f"Error al procesar el texto: {str(e)}")
