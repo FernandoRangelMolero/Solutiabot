@@ -178,29 +178,68 @@ Indicadores de desempeño.
 Penalizaciones en caso de incumplimiento.
 Mecanismos de seguimiento y evaluación técnica​1
 .
+
+Aquí tienes el texto reescrito con la información adicional integrada:
+
 Para el PCAP:
+
 Resumen detallado en formato tabla (1000 palabras) que incluya:
-Cómo acreditar la solvencia técnica y financiera: Explica con claridad los medios de acreditación y los requisitos mínimos exigidos por la normativa o el documento​2
-.
-Importes máximos de licitación por lote (sin IVA): Si aplicable, desglosados por lotes o en su totalidad​2
-.
-Criterios de adjudicación: Divide esta sección en dos grandes apartados:
+
+Tipo de contrato (servicio / suministro):
+
+Especificar si el contrato corresponde a un servicio o un suministro, detallando las características particulares de cada opción y su impacto en los requisitos y criterios de valoración.
+Tipo de suministro / servicio:
+
+Describir en detalle el tipo específico de suministro o servicio requerido, identificando sus características esenciales y las implicaciones en la ejecución del contrato.
+Objeto del contrato:
+
+Definir claramente el objetivo principal del contrato, especificando el alcance, las necesidades que busca cubrir y los resultados esperados.
+Cómo acreditar la solvencia técnica y financiera:
+
+Explicar con claridad los medios de acreditación y los requisitos mínimos exigidos por la normativa o el documento.
+Incluir detalles sobre las certificaciones necesarias (si procede) que pueden estar incluidas dentro de los criterios de valoración.
+Importes máximos de licitación por lote (sin IVA):
+
+Si es aplicable, desglosar los importes por lotes o en su totalidad, especificando los límites económicos establecidos para cada uno de ellos.
+Presupuesto del contrato:
+
+Indicar el presupuesto total asignado al contrato, diferenciando entre los importes con y sin IVA si corresponde.
+Especificar el valor estimado del contrato teniendo en cuenta su duración y posibles prórrogas.
+Criterios de adjudicación:
+
 A. Criterios Objetivos (Cuantificables mediante fórmulas matemáticas):
-Explica cómo se puntúan y qué peso específico tienen.
-Proporciona ejemplos claros de cómo se aplican las fórmulas y qué información se debe proporcionar para cumplir estos requisitos​2
-.
+Explicar cómo se puntúan y qué peso específico tienen cada uno de los criterios objetivos.
+Proporcionar ejemplos claros de cómo se aplican las fórmulas y qué información se debe proporcionar para cumplir estos requisitos.
 Ejemplo: Puntos otorgados por reducir el coste o por aumentar los tiempos de garantía.
 B. Criterios Subjetivos (Juicios de valor):
-Desarrolla ampliamente qué aspectos evalúan y cómo se otorgan los puntos.
-Describe si son evaluados por un comité técnico o un grupo de expertos.
-Ejemplo: Calidad técnica de la propuesta, metodología de trabajo, mejoras ofrecidas, capacidad de innovación, etc.​2
-.
+Desarrollar ampliamente qué aspectos evalúan y cómo se otorgan los puntos.
+Describir si son evaluados por un comité técnico o un grupo de expertos.
+Ejemplo: Calidad técnica de la propuesta, metodología de trabajo, mejoras ofrecidas, capacidad de innovación, etc.
+Criterios de valoración:
+Incluir un desglose claro de los criterios específicos aplicables, su ponderación y la relación con el objeto del contrato.
+Especificar si las certificaciones influyen en estos criterios y cómo se integran en el proceso de puntuación.
+Estudio de la fórmula del precio:
+
+Desarrollar la fórmula matemática utilizada para determinar el precio final de adjudicación.
+Explicar con ejemplos su aplicación práctica y los factores que afectan al cálculo final.
+Condiciones generales:
+
+Establecer las condiciones básicas que rigen el contrato, incluidas las obligaciones y derechos de las partes involucradas.
+Especificar las cláusulas de cumplimiento, penalizaciones por incumplimiento y otros aspectos clave.
+Qué margen estimado para cada tipo:
+
+Proporcionar una estimación de los márgenes esperados para cada tipo de suministro o servicio.
+Especificar si existen diferencias relevantes entre los distintos lotes o fases del contrato.
 Otros datos relevantes:
-Presupuesto base de licitación, valor estimado del contrato y plazos​2
-.
-Garantías: Provisional y definitiva, especificando importes y condiciones​2
-.
-Lugar y medios de presentación de ofertas​2
+Presupuesto base de licitación: Indicar el presupuesto inicial propuesto para el contrato.
+Valor estimado del contrato: Ofrecer una visión clara del valor total del contrato, teniendo en cuenta su duración y posibles ampliaciones.
+Plazos: Detallar los plazos de ejecución, entrega y finalización del contrato, así como las posibles prórrogas.
+Garantías:
+Garantía Provisional: Especificar los importes y condiciones necesarias para su cumplimiento.
+Garantía Definitiva: Desglosar las condiciones, plazos e importes requeridos para esta garantía.
+Lugar y medios de presentación de ofertas:
+Precisar la dirección física y electrónica para la presentación de ofertas.
+Incluir detalles sobre el formato, los plazos y los requisitos adicionales para la presentación válida de las ofertas.
 .
 Detalles específicos:
 Criterios Objetivos y Subjetivos:
