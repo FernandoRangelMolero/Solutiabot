@@ -1,0 +1,8 @@
+streamlit
+langchain
+langchain-openai
+openai
+python-dotenv
+PyPDFium2
+python-docx
+langchain-community
